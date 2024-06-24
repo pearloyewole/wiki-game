@@ -246,6 +246,8 @@ piscivores
 Finally, you should try testing your implementations on a page of your choosing on the
 internet!
 
+When you have this working to your satisfaction, remember to `commit` the changes!
+
 ### Exercise 2: scraping Wikipedia
 
 Now, let's put our skills to use by implementing a function that extracts all of the links
