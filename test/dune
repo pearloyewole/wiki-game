@@ -1,3 +1,5 @@
-(test
+(library
   (name wiki_game_test)
-  (libraries core expect_test_helpers_core wiki_game_lib))
+  (libraries core expect_test_helpers_core wiki_game_lib)
+  (preprocess (pps ppx_jane))
+  (inline_tests))
