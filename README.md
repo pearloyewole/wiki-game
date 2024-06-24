@@ -218,11 +218,8 @@ extracting certain elements from HTML webpages. In
    `get_first_item_of_second_unordered_list` function.
 3. Implement `print-bolded-text` by completing the `get_bolded_text` function.
 
-For each of these exercises, try writing an expect test to verify its behavior in
-[test/wiki_game_test.ml](./test/wiki_game_test.ml). Note that you will also need to expose
-these functions in [src/lambda_soup_utilities.mli](./src/lambda_soup_utilities.mli) in
-order to access them for your tests. An example expect test for the `get_title`
-function is already implemented.
+For each of these exercises, try writing an expect test to verify its behavior. You can do this directly in the [lambda_soup_utilities.ml](./src/lambda_soup_utilities.ml) file near its implementation. Example expect tests for the `get_title`
+and `get_list_items` functions are already implemented.
 
 You can also test your implementation locally on [resources/wiki/Carnivore](./resources/wiki/Carnivore):
 ```
@@ -265,8 +262,7 @@ Note that there is a bit of nuance in this exercise:
   [wikipedia_namespace.mli](./src/wikipedia_namespace.mli) to learn more.
 
 As with before, let's try writing an expect test for your `get_linked_articles` function
-in [test/wiki_game_test.ml](./test/wiki_game_test.ml). (Remember that you may need to
-add your function to [wiki_game.mli](./src/wiki_game.mli) to use it in your test.)
+in [wiki_game.ml](./src/wiki_game.ml). 
 
 You can also test your implementation locally using any of the pages in the [Wikipedia test
 dataset](./resources/wiki). For example:
@@ -304,7 +300,7 @@ Implement the `print-credits` command in [imdb.ml](./src/imdb.ml) by implementin
 `get_credits` function. 
 
 Once again, test your work by adding an expect test for `get_credits` in
-[test/wiki_game_test.ml](./test/wiki_game_test.ml).
+[imdb.ml](./src/imdb.ml).
 
 You should also test your implementation by running it on an IMDB page of your choosing, like so:
 
@@ -454,7 +450,7 @@ alpha
 ```
 
 You should also write an expect test for this function in
-[test/wiki_game_test.ml](./test/wiki_game_test.ml).
+[wiki_game.ml](./src/wiki_game.ml).
 
 ### Exercise 2: wiki mapper
 
