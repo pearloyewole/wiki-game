@@ -84,11 +84,10 @@ let%expect_test "get_first_item_of_all_unordered_lists" =
   List.iter (get_first_item_of_all_unordered_lists contents) ~f:print_endline;
   [%expect
     {|
-  
+    All feliforms such as domestic cats, big cats, hyenas, mongooses, civets
+    All birds of prey, such as hawks, eagles, falcons and owls
     |}]
 ;;
-
-(*list.map *)
 
 (* Gets the first item of the second unordered list in an HTML page. *)
 let get_first_item_of_second_unordered_list contents : string =
