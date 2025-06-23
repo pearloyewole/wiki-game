@@ -4,3 +4,13 @@ body {
     background: #FAFAFA;
     font-family: Helvetica;
 }
+
+.graph-image {
+    background-image: url(https://www.cs.cornell.edu/~kt/post/site-graph/images/example2.png);
+    filter: blur(8px);
+    width: 1000 px;
+    height: 500;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
