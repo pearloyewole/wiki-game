@@ -31,20 +31,10 @@ let%expect_test "get_title" =
 (* Gets all of the list items contained in an HTML page. *)
 let get_list_items contents : string list =
   let open Soup in
-  parse contents
-  $$ "li"
-  |> to_list
-  |> List.map ~f:(fun li ->
-    texts li |> String.concat ~sep:"" |> String.strip)
-;;
-
-let get_unordered_list_items contents : string list =
-  let open Soup in
-  parse contents
-  $$ "ul"
-  |> to_list
-  |> List.map ~f:(fun li ->
-    texts li |> String.concat ~sep:"" |> String.strip)
+  let document_node = parse contents in
+  let list_element_nodes = document_node $$ "li" |> to_list in
+  List.map list_element_nodes ~f:(fun li ->
+    texts li |> String.concat ~sep:" " |> String.strip)
 ;;
 
 let%expect_test "get_list_items" =
@@ -68,13 +58,22 @@ let%expect_test "get_list_items" =
     |}]
 ;;
 
-(* Gets the first item of all unordered lists contained in an HTML page. *)
-let get_first_item_of_all_unordered_lists contents : string list =
-  let first_item = List.hd (get_unordered_list_items contents) in
-  match first_item with Some str -> [ str ] | None -> []
+let special_text node =
+  let open Soup in
+  texts node |> String.concat ~sep:" " |> String.strip
 ;;
 
-(*started writing the expect test not finished!!!!!!!*)
+(* Gets the first item of all unordered lists contained in an HTML page. *)
+let get_first_item_of_all_unordered_lists contents : string list =
+  let open Soup in
+  let document_node = parse contents in
+  let unordered_list_nodes = document_node $$ "ul" |> to_list in
+  List.map unordered_list_nodes ~f:(fun ul ->
+    match select_one "li" ul with
+    | Some node -> special_text node
+    | None -> "")
+;;
+
 let%expect_test "get_first_item_of_all_unordered_lists" =
   (* This test uses existing files on the filesystem. *)
   let contents =
@@ -82,19 +81,19 @@ let%expect_test "get_first_item_of_all_unordered_lists" =
       (Local (File_path.of_string "../resources/wiki"))
       ~resource:"Carnivore"
   in
-  List.iter
-    (get_first_item_of_second_unordered_list_items contents)
-    ~f:print_endline;
+  List.iter (get_first_item_of_all_unordered_lists contents) ~f:print_endline;
   [%expect
     {|
-    All feliforms, such as domestic cats, big cats, hyenas, mongooses, civets
+  
     |}]
 ;;
 
+(*list.map *)
+
 (* Gets the first item of the second unordered list in an HTML page. *)
 let get_first_item_of_second_unordered_list contents : string =
-  let first_item = List.hd (get_unordered_list_items contents) in
-  match first_item with Some str -> [ str ] | None -> []
+  ignore (contents : string);
+  failwith "TODO"
 ;;
 
 (* Gets all bolded text from an HTML page. *)
