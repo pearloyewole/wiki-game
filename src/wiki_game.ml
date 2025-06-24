@@ -1,5 +1,15 @@
 open! Core
 
+(*let node_to_text node =
+  let open Soup in
+  texts node |> String.concat ~sep:"" |> String.strip
+  ;; *)
+
+let get_url node =
+  let open Soup in
+  match attribute "href" node with Some link -> link | None -> ""
+;;
+
 (* [get_linked_articles] should return a list of wikipedia article lengths contained in
    the input.
 
@@ -14,9 +24,48 @@ open! Core
    One nice think about Wikipedia is that stringent content moderation results in
    uniformity in article format. We can expect that all Wikipedia article links parsed
    from a Wikipedia page will have the form "/wiki/<TITLE>". *)
+
 let get_linked_articles contents : string list =
-  ignore (contents : string);
-  failwith "TODO"
+  let open Soup in
+  let document_node = parse contents in
+  let list_element_nodes = document_node $$ "a" |> to_list in
+  let identify_namespace url =
+    Option.is_none (Wikipedia_namespace.namespace url)
+  in
+  let str_list_element_nodes : string list =
+    List.map list_element_nodes ~f:(fun a -> get_url a)
+  in
+  List.filter str_list_element_nodes ~f:(fun b -> identify_namespace b)
+;;
+
+let%expect_test "get_linked_articles" =
+  (* This test uses existing files on the filesystem. *)
+  let contents =
+    File_fetcher.fetch_exn
+      (Local (File_path.of_string "../resources/wiki"))
+      ~resource:"Carnivore"
+  in
+  List.iter (get_linked_articles contents) ~f:print_endline;
+  [%expect
+    {|
+    /wiki/Animal
+    /wiki/Feliformia
+    /wiki/Caniformia
+    |}]
+;;
+
+let%expect_test "get_linked_articles" =
+  (* This test uses existing files on the filesystem. *)
+  let contents =
+    File_fetcher.fetch_exn
+      (Local (File_path.of_string "../resources/wiki"))
+      ~resource:"Domestication_of_the_cat"
+  in
+  List.iter (get_linked_articles contents) ~f:print_endline;
+  [%expect
+    {|
+    /wiki/Cat 
+    |}]
 ;;
 
 let print_links_command =
@@ -47,8 +96,8 @@ let visualize_command =
   let open Command.Let_syntax in
   Command.basic
     ~summary:
-      "parse a file listing interstates and generate a graph visualizing the highway \
-       network"
+      "parse a file listing interstates and generate a graph visualizing \
+       the highway network"
     [%map_open
       let how_to_fetch = File_fetcher.How_to_fetch.param
       and origin = flag "origin" (required string) ~doc:" the starting page"
@@ -87,11 +136,14 @@ let find_path ?(max_depth = 3) ~origin ~destination ~how_to_fetch () =
 let find_path_command =
   let open Command.Let_syntax in
   Command.basic
-    ~summary:"Play wiki game by finding a link between the origin and destination pages"
+    ~summary:
+      "Play wiki game by finding a link between the origin and destination \
+       pages"
     [%map_open
       let how_to_fetch = File_fetcher.How_to_fetch.param
       and origin = flag "origin" (required string) ~doc:" the starting page"
-      and destination = flag "destination" (required string) ~doc:" the destination page"
+      and destination =
+        flag "destination" (required string) ~doc:" the destination page"
       and max_depth =
         flag
           "max-depth"
