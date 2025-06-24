@@ -31,10 +31,11 @@ let%expect_test "get_title" =
 (* Gets all of the list items contained in an HTML page. *)
 let get_list_items contents : string list =
   let open Soup in
-  let document_node = parse contents in
-  let list_element_nodes = document_node $$ "li" |> to_list in
-  List.map list_element_nodes ~f:(fun li ->
-    texts li |> String.concat ~sep:" " |> String.strip)
+  parse contents
+  $$ "li"
+  |> to_list
+  |> List.map ~f:(fun li ->
+    texts li |> String.concat ~sep:"" |> String.strip)
 ;;
 
 let%expect_test "get_list_items" =
@@ -60,7 +61,7 @@ let%expect_test "get_list_items" =
 
 let special_text node =
   let open Soup in
-  texts node |> String.concat ~sep:" " |> String.strip
+  texts node |> String.concat ~sep:"" |> String.strip
 ;;
 
 (* Gets the first item of all unordered lists contained in an HTML page. *)
@@ -84,15 +85,29 @@ let%expect_test "get_first_item_of_all_unordered_lists" =
   List.iter (get_first_item_of_all_unordered_lists contents) ~f:print_endline;
   [%expect
     {|
-    All feliforms such as domestic cats, big cats, hyenas, mongooses, civets
+    All feliforms, such as domestic cats, big cats, hyenas, mongooses, civets
     All birds of prey, such as hawks, eagles, falcons and owls
     |}]
 ;;
 
 (* Gets the first item of the second unordered list in an HTML page. *)
 let get_first_item_of_second_unordered_list contents : string =
-  ignore (contents : string);
-  failwith "TODO"
+  let first_items = get_first_item_of_all_unordered_lists contents in
+  match List.nth first_items 1 with Some str -> str | None -> ""
+;;
+
+let%expect_test "get_first_item_of_second_unordered_list" =
+  (* This test uses existing files on the filesystem. *)
+  let contents =
+    File_fetcher.fetch_exn
+      (Local (File_path.of_string "../resources/wiki"))
+      ~resource:"Carnivore"
+  in
+  print_endline (get_first_item_of_second_unordered_list contents);
+  [%expect
+    {|
+    All birds of prey, such as hawks, eagles, falcons and owls
+    |}]
 ;;
 
 (* Gets all bolded text from an HTML page. *)
