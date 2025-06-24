@@ -97,8 +97,29 @@ let get_first_item_of_second_unordered_list contents : string =
 
 (* Gets all bolded text from an HTML page. *)
 let get_bolded_text contents : string list =
-  ignore (contents : string);
-  failwith "TODO"
+  let open Soup in
+  let document_node = parse contents in
+  let list_element_nodes = document_node $$ "b" |> to_list in
+  List.map list_element_nodes ~f:(fun li ->
+    texts li |> String.concat ~sep:" " |> String.strip)
+;;
+
+let%expect_test "get_bolded_text" =
+  (* This test uses existing files on the filesystem. *)
+  let contents =
+    File_fetcher.fetch_exn
+      (Local (File_path.of_string "../resources/wiki"))
+      ~resource:"Carnivore"
+  in
+  List.iter (get_bolded_text contents) ~f:print_endline;
+  [%expect
+    {|
+    carnivore
+    Predators
+    Scavengers
+    insectivores
+    piscivores
+    |}]
 ;;
 
 (* [make_command ~summary ~f] is a helper function that builds a simple HTML parsing
