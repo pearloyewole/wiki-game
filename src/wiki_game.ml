@@ -7,7 +7,7 @@ open! Core
 
 let get_url node =
   let open Soup in
-  match attribute "href" node with Some link -> link | None -> ""
+  attribute "href" node
 ;;
 
 (* [get_linked_articles] should return a list of wikipedia article lengths contained in
@@ -28,14 +28,14 @@ let get_url node =
 let get_linked_articles contents : string list =
   let open Soup in
   let document_node = parse contents in
-  let list_element_nodes = document_node $$ "a" |> to_list in
-  let identify_namespace url =
+  let url_nodes = document_node $$ "a" |> to_list in
+  let checking_no_namespace url =
     Option.is_none (Wikipedia_namespace.namespace url)
   in
-  let str_list_element_nodes : string list =
-    List.map list_element_nodes ~f:(fun a -> get_url a)
+  let urls : string list =
+    List.filter_map url_nodes ~f:(fun a -> get_url a)
   in
-  List.filter str_list_element_nodes ~f:(fun b -> identify_namespace b)
+  List.filter urls ~f:(fun b -> checking_no_namespace b)
 ;;
 
 let%expect_test "get_linked_articles" =

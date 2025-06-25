@@ -2,8 +2,6 @@ open! Core
 module City = String
 
 module Network = struct
-  (* We can represent our social network graph as a set of connections, where a connection
-     represents a friendship between two people. *)
   module Connection = struct
     module T = struct
       type t = City.t * City.t [@@deriving compare, sexp]
@@ -11,20 +9,27 @@ module Network = struct
 
     include Comparable.Make (T)
 
-    let rec pair_strings lst =
-      match lst with
-      | x :: y :: rest -> (x, y) :: pair_strings (y :: rest)
-      | _ -> []
+    let pair_strings lst = List.cartesian_product lst lst
+
+    let%expect_test "pair_strings" =
+      (* This test uses existing files on the filesystem. *)
+      let contents =
+        [ "Seattle"; "Portland"; "Sacramento"; "LosAngeles"; "SanDiego" ]
+      in
+      List.iter (pair_strings contents) ~f:(fun city_pair ->
+        print_s [%message (city_pair : string * string)]);
+      [%expect
+        {|
+        [("Seattle","Portland");("Sacramento","LosAngeles");"SanDiego" ]
+    |}]
     ;;
 
-    let create_city_pairs s =
-      match String.split_on_chars ~on:[ ',' ] s with
-      | _route_name :: cities -> pair_strings cities
-      | [] -> []
-    ;;
+    (*exploring labeling *)
 
     let of_string s =
-      create_city_pairs s
+      (match String.split_on_chars ~on:[ ',' ] s with
+       | _route_name :: cities -> pair_strings cities
+       | [] -> [])
       |> List.map ~f:(fun (a, b) -> City.of_string a, City.of_string b)
     ;;
   end
