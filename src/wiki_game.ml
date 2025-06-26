@@ -85,19 +85,26 @@ let print_links_command =
    implementation can be tested locally on the small dataset in the ../resources/wiki
    directory. *)
 let visualize ?(max_depth = 3) ~origin ~output_file ~how_to_fetch () : unit =
-  ignore (max_depth : int);
-  ignore (origin : string);
-  ignore (output_file : File_path.t);
-  ignore (how_to_fetch : File_fetcher.How_to_fetch.t);
-  failwith "TODO"
+  let find_contents wiki =
+    File_fetcher.fetch_exn
+      (Local (File_path.of_string "../resources/wiki"))
+      ~resource: wiki 
+  in
+  let website_links = get_linked_articles (find_contents wiki)
+
+  let wiki_map =
+    Set.fold
+      ~f:(fun acc (url1, url2) -> Map.add_multi ~key:url1 ~data:url2 acc)
+      ~init: Map.empty
+      network
+  in
 ;;
 
 let visualize_command =
   let open Command.Let_syntax in
   Command.basic
     ~summary:
-      "parse a file listing interstates and generate a graph visualizing \
-       the highway network"
+      "parse a file listing articles and generate a graph visualizing links to articles"
     [%map_open
       let how_to_fetch = File_fetcher.How_to_fetch.param
       and origin = flag "origin" (required string) ~doc:" the starting page"

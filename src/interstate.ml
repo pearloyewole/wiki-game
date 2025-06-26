@@ -9,28 +9,42 @@ module Network = struct
 
     include Comparable.Make (T)
 
-    let pair_strings lst = List.cartesian_product lst lst
+    (*exploring labeling *)
 
-    let%expect_test "pair_strings" =
+    let of_string s =
+      let pair_strings lst = List.cartesian_product lst lst in
+      (match String.split_on_chars ~on:[ ',' ] s with
+       | _route_name :: cities -> pair_strings cities
+       | [] -> [])
+      |> List.map ~f:(fun (a, b) -> City.of_string a, City.of_string b)
+    ;;
+
+    let%expect_test "of_string" =
       (* This test uses existing files on the filesystem. *)
       let contents =
-        [ "Seattle"; "Portland"; "Sacramento"; "LosAngeles"; "SanDiego" ]
+        "I-5,Seattle,Portland,Sacramento,LosAngeles,SanDiego\n\
+         I-10,LosAngeles,Phoenix,Tucson,ElPaso,SanAntonio,Houston,NewOrleans,Tallahassee,Jacksonville\n\
+         I-15,Sweetgrass,GreatFalls,Butte,IdahoFalls,Ogden,SaltLakeCity,Provo,LasVegas\n\
+         I-20,Midland,Odessa,Shreveport,Monroe,Jackson,Birmingham,Atlanta,Augusta,Florence\n\
+         I-25,Buffalo,Casper,Cheyenne,FortCollins,Denver,ColoradoSprings,Pueblo,SantaFe,Albuquerque,LasCruces\n\
+         I-35,Duluth,Minneapolis,KansasCity,Wichita,OklahomaCity,FortWorth,Dallas,Austin,SanAntonio\n\
+         I-40,Barstow,Needles,Kingman,Flagstaff,Albuquerque,Amarillo,OklahomaCity,LittleRock,Memphis,Nashville,Asheville,Raleigh\n\
+         I-45,Dallas,Corsicana,Huntsville,Conroe,Houston,Galveston\n\
+         I-55,Chicago,Springfield,St_Louis,CapeGirardeau,Memphis,Grenada,Jackson,Hammond,New_Orleans\n\
+         I-64,St_Louis,Louisville,Lexington,Charleston,Richmond,Suffolk,Norfolk,Chesapeake\n\
+         I-65,Gary,Chicago,Indianapolis,Louisville,Nashville,Birmingham,Mobile\n\
+         I-70,GrandJunction,Denver,KansasCity,St_Louis,TerreHaute,Indianapolis,Columbus,Wheeling,Baltimore\n\
+         I-75,Detroit,Toledo,Cincinnati,Lexington,Knoxville,Chattanooga,Atlanta,Macon,Gainesville,Tampa,Naples\n\
+         I-80,SanFrancisco,Sacramento,Reno,SaltLakeCity,Cheyenne,Omaha,DesMoines,QuadCities,Chicago,Toledo,Cleveland\n\
+         I-90,Spokane,Seattle,Billings,RapidCity,SiouxFalls,Minneapolis,Madison,Chicago,Toledo,Cleveland,Buffalo,Boston\n\
+         I-95,Boston,Providence,NewYorkCity,Philadelphia,Baltimore,WashingtonDC,Richmond,Florence,Savannah,Jacksonville,Miami\n"
       in
-      List.iter (pair_strings contents) ~f:(fun city_pair ->
+      List.iter (of_string contents) ~f:(fun city_pair ->
         print_s [%message (city_pair : string * string)]);
       [%expect
         {|
         [("Seattle","Portland");("Sacramento","LosAngeles");"SanDiego" ]
     |}]
-    ;;
-
-    (*exploring labeling *)
-
-    let of_string s =
-      (match String.split_on_chars ~on:[ ',' ] s with
-       | _route_name :: cities -> pair_strings cities
-       | [] -> [])
-      |> List.map ~f:(fun (a, b) -> City.of_string a, City.of_string b)
     ;;
   end
 

@@ -121,26 +121,32 @@ let visualize_command =
 ;;
 
 (*[find_friend_group network ~person] returns a list of all people who are mutually
-   connected to the provided [person] in the provided [network]. *)
-   let find_friend_group network ~person : Person.t list =
-    let visited = String.Hash_set.create () in
-    let to_visit = Queue.create () in
-    Queue.enqueue to_visit person;
-    let rec traverse_friends () =
-      match Queue.dequeue to_visit with
-      |None -> ()
-      |Some current_person ->
-        if not (Hash_set.mem visited current_person)
-          then (
-            Hash_set.add visited current_person;
-            (*print node, perhaps here you can add each person to a list *)
-            let adjacent_people = Map.find_exn network person in
-            List.iter adjacent_people ~f(fun next_person -> Queue.push to_visit next_person));
-            traverse()
-        in 
-        traverse ()
-
-   ;;
+  connected to the provided [person] in the provided [network]. *)
+let find_friend_group network ~person : Person.t list =
+  let network_map =
+    Set.fold
+      ~f:(fun acc (p1, p2) -> Map.add_multi ~key:p1 ~data:p2 acc)
+      ~init:Person.Map.empty
+      network
+  in
+  let visited = String.Hash_set.create () in
+  let to_visit = Queue.create () in
+  Queue.enqueue to_visit person;
+  let rec traverse_friends () =
+    match Queue.dequeue to_visit with
+    | None -> ()
+    | Some current_person ->
+      if not (Hash_set.mem visited current_person)
+      then (
+        Hash_set.add visited current_person;
+        let adjacent_people = Map.find_exn network_map person in
+        List.iter adjacent_people ~f:(fun next_person ->
+          Queue.enqueue to_visit next_person));
+      traverse_friends ()
+  in
+  traverse_friends ();
+  Hash_set.to_list visited
+;;
 
 let find_friend_group_command =
   let open Command.Let_syntax in
@@ -152,17 +158,16 @@ let find_friend_group_command =
           "input"
           (required File_path.arg_type)
           ~doc:"FILE a file listing all friendships"
-      and _person =
+      and person =
         flag
           "person"
           (required string)
           ~doc:"STRING name of person whose friend group to find"
       in
       fun () ->
-        let _network = Network.of_file input_file in
+        let network = Network.of_file input_file in
         let friends = find_friend_group network ~person in
         List.iter friends ~f:print_endline]
-        ()]
 ;;
 
 let command =
