@@ -79,32 +79,89 @@ let print_links_command =
         List.iter (get_linked_articles contents) ~f:print_endline]
 ;;
 
+module Wiki_pair = struct
+  type t =
+    { parent_page : string
+    ; child_page : string
+    }
+  [@@deriving hash, compare, sexp]
+end
+
+module G = Graph.Imperative.Graph.Concrete (String)
+
+module Dot = Graph.Graphviz.Dot (struct
+    include G
+
+    (* These functions can be changed to tweak the appearance of the generated
+       graph. Check out the ocamlgraph graphviz API
+       (https://github.com/backtracking/ocamlgraph/blob/master/src/graphviz.mli) for
+       examples of what values can be set here. *)
+    let edge_attributes _ = [ `Dir `None ]
+    let default_edge_attributes _ = []
+    let get_subgraph _ = None
+    let vertex_attributes v = [ `Shape `Box; `Label v; `Fillcolor 1000 ]
+    let vertex_name v = v
+    let default_vertex_attributes _ = []
+    let graph_attributes _ = []
+  end)
+
 (* [visualize] should explore all linked articles up to a distance of [max_depth] away
    from the given [origin] article, and output the result as a DOT file. It should use the
    [how_to_fetch] argument along with [File_fetcher] to fetch the articles so that the
    implementation can be tested locally on the small dataset in the ../resources/wiki
    directory. *)
 let visualize ?(max_depth = 3) ~origin ~output_file ~how_to_fetch () : unit =
-  let find_contents wiki =
-    File_fetcher.fetch_exn
-      (Local (File_path.of_string "../resources/wiki"))
-      ~resource: wiki 
+  let find_contents wiki_url =
+    File_fetcher.fetch_exn how_to_fetch ~resource:wiki_url
   in
-  let website_links = get_linked_articles (find_contents wiki)
+  let visited = String.Hash_set.create () in
+  let to_visit = Queue.create () in
+  Queue.enqueue to_visit origin;
+  let edges = Hash_set.create (module Wiki_pair) in
+  let depth = 0 in
+  let rec traverse_wiki () =
+    match Queue.dequeue to_visit with
+    | None -> ()
+    | Some current_wiki ->
+      if Hash_set.mem visited current_wiki || depth > max_depth
+      then traverse_wiki ()
+      else (
+        Hash_set.add visited current_wiki;
+        let contents = find_contents current_wiki in
+        let links = get_linked_articles contents in
+        List.iter links ~f:(fun link ->
+          Hash_set.add
+            edges
+            { Wiki_pair.parent_page = current_wiki; child_page = link };
+          Queue.enqueue to_visit link));
+      traverse_wiki ()
+  in
+  traverse_wiki
+    ()
+    dot_output_graph
+    ~max_depth
+    ~origin
+    ~output_file
+    ~how_to_fetch
+    ()
+;;
 
-  let wiki_map =
-    Set.fold
-      ~f:(fun acc (url1, url2) -> Map.add_multi ~key:url1 ~data:url2 acc)
-      ~init: Map.empty
-      network
-  in
+let dot_output_graph ?(max_depth = 3) ~origin ~output_file ~how_to_fetch () =
+  let graph = G.create () in
+  let wiki_pages = edges in
+  Hash_set.iter
+    edges
+    ~f:(fun { Wiki_pair.parent_page; Wiki_pair.child_page } ->
+      G.add_edge graph parent_page child_page);
+  Dot.output_graph (Out_channel.create (File_path.to_string output_file))
 ;;
 
 let visualize_command =
   let open Command.Let_syntax in
   Command.basic
     ~summary:
-      "parse a file listing articles and generate a graph visualizing links to articles"
+      "parse a file listing articles and generate a graph visualizing links \
+       to articles"
     [%map_open
       let how_to_fetch = File_fetcher.How_to_fetch.param
       and origin = flag "origin" (required string) ~doc:" the starting page"
